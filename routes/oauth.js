@@ -50,9 +50,10 @@ router.get('/urn', async (req, res, next) => {
     try {
         let api = new Forge.ItemsApi();
         let response = await api.getItemVersions (config.projectId, config.itemId, {}, getClient(), await getInternalToken());
+        let versions = response.body.data.filter((elt) => elt.attributes.extension.data.processState === "PROCESSING_COMPLETE")
         res.json({
-            urn: safeBase64encode(response.body.data[0].id),
-            version: response.body.data[0].attributes.versionNumber
+            urn: safeBase64encode(versions[0].id /*response.body.data[0].id*/),
+            version: versions[0].attributes.versionNumber /*response.body.data[0].attributes.versionNumber*/
         });
     } catch(err) {
         next(err);
