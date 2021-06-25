@@ -113,7 +113,7 @@ function onDocumentLoadFailure(viewerErrorCode) {
 }
 
 function getForgeToken(callback) {
-  fetch('/api/forge/oauth/token').then(res => {
+  fetch('/thewaywebuild/token').then(res => {
     res.json().then(data => {
       callback(data.access_token, data.expires_in);
     });
@@ -121,7 +121,7 @@ function getForgeToken(callback) {
 }
 
 function getModelURN(callback) {
-  fetch('/api/forge/oauth/urn').then(res => {
+  fetch('/thewaywebuild/urn').then(res => {
     res.json().then(data => {
       callback(data.urn, data.version);
     });

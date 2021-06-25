@@ -25,7 +25,7 @@ module.exports = {
 
     // Required scopes for your application on server-side
     scopes: {
-        internal: ['data:read'/*, 'data:create', 'data:write'*/],
+        internal: ['viewables:read', 'data:read'/*, 'data:create', 'data:write'*/],
         public: ['viewables:read']
     },
 

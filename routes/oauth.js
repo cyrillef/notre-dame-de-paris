@@ -18,22 +18,42 @@
 
 const express = require('express');
 
-const { getClient, getPublicToken, getInternalToken } = require('./common/oauth');
-const Forge =require('forge-apis');
+const { getClient, getPublicToken, getInternalToken, initiateLogin, createTokens } = require('./common/oauth');
+const Forge = require('forge-apis');
 
 const config = require('../config');
 
 let router = express.Router();
 
-// GET /api/forge/oauth/token - generates a public access token (required by the Forge viewer).
+// GET /thewaywebuild/token - generates a public access token (required by the Forge viewer).
 router.get('/token', async (req, res, next) => {
     try {
         const token = await getPublicToken();
         res.json({
             access_token: token.access_token,
-            expires_in: token.expires_in    
+            expires_in: token.expires_in
         });
-    } catch(err) {
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/start', (req, res, next) => {
+    try {
+        const url = initiateLogin();
+        res.redirect(url);
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/callback', async (req, res, next) => {
+    try {
+        if (req.query.code)
+            await createTokens(req);
+        //res.status(200).end();
+        res.redirect('/');
+    } catch (err) {
         next(err);
     }
 });
@@ -49,16 +69,15 @@ function safeBase64encode (st) {
 router.get('/urn', async (req, res, next) => {
     try {
         let api = new Forge.ItemsApi();
-        let response = await api.getItemVersions (config.projectId, config.itemId, {}, getClient(), await getInternalToken());
-        let versions = response.body.data.filter((elt) => elt.attributes.extension.data.processState === "PROCESSING_COMPLETE")
+        let response = await api.getItemVersions(config.projectId, config.itemId, {}, getClient(), await getInternalToken());
+        let versions = response.body.data.filter((elt) => elt.attributes.extension.data.processState === 'PROCESSING_COMPLETE');
         res.json({
             urn: safeBase64encode(versions[0].id /*response.body.data[0].id*/),
             version: versions[0].attributes.versionNumber /*response.body.data[0].attributes.versionNumber*/
         });
-    } catch(err) {
+    } catch (err) {
         next(err);
     }
 });
-
 
 module.exports = router;

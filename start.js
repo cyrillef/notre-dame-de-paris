@@ -23,7 +23,7 @@ const config = require('./config');
 let app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '50mb' }));
-app.use('/api/forge/oauth', require('./routes/oauth'));
+app.use('/thewaywebuild', require('./routes/oauth'));
 app.use((err, req, res, next) => {
     console.error(err);
     res.status(err.statusCode).json(err);

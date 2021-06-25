@@ -17,13 +17,13 @@
 /////////////////////////////////////////////////////////////////////
 
 const { AuthClientTwoLegged, AuthClientThreeLegged } = require('forge-apis');
-const _fs =require('fs');
-const _path =require('path');
+const _fs = require('fs');
+const _path = require('path');
 
 const config = require('../../config');
 
-function getClient(scope) {
-    return new AuthClientThreeLegged(config.clientId, config.clientSecret, config.callback, config.scopes[scope] || config.scopes.public, false);
+function getClient (scope) {
+    return (new AuthClientThreeLegged(config.clientId, config.clientSecret, config.callback, config.scopes[scope] || config.scopes.public, false));
 }
 
 function readFile (filename, enc) {
@@ -37,35 +37,67 @@ function readFile (filename, enc) {
     }));
 }
 
+function writeFile (filename, data) {
+    return (new Promise((fulfill, reject) => {
+        _fs.writeFile(filename, data, (err, res) => {
+            if (err)
+                reject(err);
+            else
+                fulfill(res);
+        });
+    }));
+}
+
 let cache = {};
-async function getToken(scope) {
+async function getToken (scope) {
     if (cache[scope])
         return cache[scope];
-    let credentials =cache.last;
+    let credentials = cache.last;
     if (!credentials) // well read it
-        credentials =JSON.parse (await readFile(_path.resolve(__dirname, '../../data/credentials.json')));
+        credentials = JSON.parse(await readFile(_path.resolve(__dirname, '../../data/credentials.json')));
 
     console.log(`Refreshing ${scope} token.`);
     const client = getClient(scope);
     credentials = await client.refreshToken(credentials, config.scopes[scope]);
     console.log(`New ${scope} token received.`);
     cache[scope] = credentials;
-    cache.last =credentials;
-    _fs.writeFile (_path.resolve(__dirname, '../../data/credentials.json'), JSON.stringify(credentials), () => {}); // save it now
+    cache.last = credentials;
+    //_fs.writeFile(_path.resolve(__dirname, '../../data/credentials.json'), JSON.stringify(credentials), () => { }); // save it now
+    await writeFile(_path.resolve(__dirname, '../../data/credentials.json'), JSON.stringify(credentials));
     setTimeout(() => { delete cache[scope]; }, credentials.expires_in * 1000);
-    return credentials;
+    return (credentials);
 }
 
-async function getPublicToken() {
+async function getPublicToken () {
     return await getToken('public');
 }
 
-async function getInternalToken() {
+async function getInternalToken () {
     return await getToken('internal');
+}
+
+function initiateLogin () {
+    cache = {};
+    const client = getClient('internal');
+    return (client.generateAuthUrl());
+}
+
+async function createTokens (req) {
+    const scope = 'internal';
+    const client = getClient(scope);
+    const credentials = await client.getToken(req.query.code);
+    console.log(`New ${scope} token received.`);
+    cache[scope] = credentials;
+    cache.last = credentials;
+    //_fs.writeFile(_path.resolve(__dirname, '../../data/credentials.json'), JSON.stringify(credentials), () => { }); // save it now
+    await writeFile(_path.resolve(__dirname, '../../data/credentials.json'), JSON.stringify(credentials));
+    setTimeout(() => { delete cache[scope]; }, credentials.expires_in * 1000);
 }
 
 module.exports = {
     getClient,
     getPublicToken,
-    getInternalToken
+    getInternalToken,
+    initiateLogin,
+    createTokens
 };
